@@ -1,6 +1,7 @@
 package com.filmlebendczil.logmanagement.controller;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +19,9 @@ import com.filmlebendczil.logmanagement.entities.Log;
 import com.filmlebendczil.logmanagement.entities.LogConfig;
 import com.filmlebendczil.logmanagement.repository.LogRepository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 @RestController
 @CrossOrigin
 public class LogManagementController {
@@ -29,20 +33,31 @@ public class LogManagementController {
 
 	Map<String, Boolean> actualTypes = config.getActualTypes();
 
-	@PostMapping("add")
-	public ResponseEntity<Object> addLog(@RequestBody ArrayList<Log> logs) {
-		for (Log log : logs) {
-			if (actualTypes.containsKey(log.getType()) != true) {
-				actualTypes.put(log.getType(), true);
-			}
-			
-			if (actualTypes.get(log.getType()) == false) {
-				continue;
-			}
-			repository.save(log);
-		}
 
-		return ResponseEntity.ok(logs);
+	@PostMapping("add")
+	public ResponseEntity<Object> addLog(@RequestBody String logString) {
+
+		try {
+
+			ObjectMapper mapper = new ObjectMapper();
+			List<Log> logs = mapper.readValue(logString, new TypeReference<List<Log>>() {
+			});
+
+			for (Log log : logs) {
+				if (actualTypes.containsKey(log.getType()) != true) {
+					actualTypes.put(log.getType(), true);
+				}
+
+				if (actualTypes.get(log.getType()) == false) {
+					continue;
+				}
+				repository.save(log);
+			}
+
+			return ResponseEntity.ok(logs);
+		} catch (Exception e){
+			return ResponseEntity.ok("Error " + e.getMessage());
+		}
 	}
 
 	@PostMapping("/modify")
